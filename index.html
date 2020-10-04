@@ -1,0 +1,113 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Heat simulation</title>
+    <script src="matter-js-0.14.2\build\matter.min.js"></script>
+
+</head>
+
+<body>
+    <script>
+        // module aliases
+        var Engine = Matter.Engine,
+            Render = Matter.Render,
+            World = Matter.World,
+            Bodies = Matter.Bodies,
+            Body = Matter.Body;
+        
+        // Experimental hack for energy not being conserved
+        // seems to help but doesnt fix it
+        // (default is 4)
+        // Matter.Resolver._restingThresh = 1;
+
+        // Maybe setting it to 0 will eliminate the problem?
+        Matter.Resolver._restingThresh = 0;
+
+        CANVAS_WIDTH = 600;
+        CANVAS_HEIGHT = 600;
+        WALL_WIDTH = 1;
+
+        function makeParticle(x, y, radius, force) {
+
+            let particle = Bodies.circle(x, y, radius, { inertia: Infinity });
+            particle.restitution = 1;
+            particle.friction = 0;
+            particle.frictionAir = 0;
+            Body.applyForce(particle, { x: particle.position.x, y: particle.position.y }, force);
+
+            return particle
+        }
+
+        function makeBox(x, y, width, height, wallsToHave = [true, true, true, true]) {
+            let topWall = Bodies.rectangle(x + width / 2, y, width, WALL_WIDTH, { isStatic: true });
+            let rightWall = Bodies.rectangle(x + width, y + height / 2, WALL_WIDTH, height, { isStatic: true });
+            let bottomWall = Bodies.rectangle(x + width / 2, y + height, width, WALL_WIDTH, { isStatic: true });
+            let leftWall = Bodies.rectangle(x, y + height / 2, WALL_WIDTH, width, { isStatic: true });
+
+            return [topWall, rightWall, bottomWall, leftWall].filter((wall, i) => wallsToHave[i])
+        }
+
+        function makeParticlesInBoxes(particlesPerBox) {
+            // box1
+            box1Particles = []
+            for (let i = 0; i < particlesPerBox; i++) {
+                box1Particles.push(makeParticle(Math.random() * CANVAS_WIDTH / 3, Math.random() * CANVAS_HEIGHT / 3 + CANVAS_HEIGHT / 3, 10, force = { x: Math.random() >= 0.5 ? 0.0015 : -0.0015, y: 0.0015 }))
+            };
+
+            // box2
+            box2Particles = []
+            for (let i = 0; i < particlesPerBox; i++) {
+                box2Particles.push(makeParticle(Math.random() * CANVAS_WIDTH / 3 + CANVAS_WIDTH * 2/3, Math.random() * CANVAS_HEIGHT / 3 + CANVAS_HEIGHT / 3, 10, force = { x: 0, y: 0 }))
+            };
+
+            return [...box1Particles, ...box2Particles];
+        }
+
+        // create an engine
+        var engine = Engine.create();
+
+        // create a renderer
+        var render = Render.create({
+            element: document.body,
+            engine: engine,
+            options: {
+                width: CANVAS_WIDTH,
+                height: CANVAS_HEIGHT
+            }
+        });
+
+        // Remove gravity
+        engine.world.gravity.x = 0;
+        engine.world.gravity.y = 0;
+
+        // create two boxes and a ground
+        // x, y, width, height
+        // var boxB = Bodies.rectangle(450, 50, 80, 80);
+
+        // add all of the bodies to the world
+        World.add(engine.world, [
+            ...makeBox(CANVAS_WIDTH * 2 / 3, CANVAS_HEIGHT / 2 - 100, 200, 200, wallsToHave = [true, true, true, false]),
+            ...makeBox(0, CANVAS_HEIGHT / 2 - 100, 200, 200, wallsToHave = [true, false, true, true]),
+
+            Bodies.rectangle(CANVAS_WIDTH / 3, CANVAS_HEIGHT * 7 / 18, WALL_WIDTH, CANVAS_HEIGHT / 9, { isStatic: true }),
+            Bodies.rectangle(CANVAS_WIDTH / 3, CANVAS_HEIGHT * 11 / 18, WALL_WIDTH, CANVAS_HEIGHT / 9, { isStatic: true }),
+            Bodies.rectangle(CANVAS_WIDTH * 2 / 3, CANVAS_HEIGHT * 7 / 18, WALL_WIDTH, CANVAS_HEIGHT / 9, { isStatic: true }),
+            Bodies.rectangle(CANVAS_WIDTH * 2 / 3, CANVAS_HEIGHT * 11 / 18, WALL_WIDTH, CANVAS_HEIGHT / 9, { isStatic: true }),
+            Bodies.rectangle(CANVAS_WIDTH / 2, CANVAS_HEIGHT * 5 / 9, CANVAS_WIDTH / 3, WALL_WIDTH, { isStatic: true }),
+            Bodies.rectangle(CANVAS_WIDTH / 2, CANVAS_HEIGHT * 4 / 9, CANVAS_WIDTH / 3, WALL_WIDTH, { isStatic: true }),
+
+            ...makeParticlesInBoxes(30),
+        ]);
+
+        // run the engine
+        Engine.run(engine);
+
+        // run the renderer
+        Render.run(render);
+    </script>
+</body>
+
+</html>
