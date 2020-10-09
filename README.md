@@ -1,6 +1,8 @@
 # HeatSimulation
 A simulation of heat transfer using bouncing balls in a container
 
+[README em português](README.pt-br.md)
+
 [Watch it!](https://heatsimulation.netlify.app/)
 
 ![Screenshot](images/screenshot.png)
